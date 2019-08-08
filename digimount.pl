@@ -1,48 +1,33 @@
 #!/usr/bin/perl -X
 
 $digidav="https://storage.rcs-rds.ro/dav";
+print "Please give us the directory path where you want to mount the DigiStorage account: ";
+chomp ($path = <STDIN>);
+print "Cheking the path:..... ";
 
-print "Detecting mount of Digi Storage.... ";
-my $path = qx/ mount | grep "$digidav" | awk '{ print \$3 }'/;
-$path = trim ($path);
+check_path ($path);
 
-if ( length $path > 0) {
-  print "Digi Storage mount detected at: $path\n";
-  print "Do you want to unmount $path ?\n";
-  print "Please use \"Yes\" or \"No\": ";
-  chomp ($resp = <STDIN>);
-  if ($resp eq "Yes"){
-    print "Unmounting $path\n";
-    qx /umount $path/;
-  }
-  elsif ($resp eq "No"){
-   print "Please give us the path to unmount: ";
-   chomp ($path2 = <STDIN>);
-   if (-d $path2) {
-     print "Path $path2 exists trying to unmount:\n";
-     qx /umount $path2/;
-   }
-   else {
-     print "Path does not exist, please run again script\n";
-     exit 1;
-   }
+sub check_path ()
+{
+ $i = 1;
+  $p = $_[0];
+  if (-d "$p"){
+    print "$p is OK!\n";
   }
   else {
-  print "Your input was not correct: Yes or No\n";
-  exit 1;
-  }
-} else {
-  print "Nothing found!\n";
-  print "Please give us the path to unmount: ";
-  chomp ($path3 = <STDIN>);
-  if (-d $path3) {
-    print "Path $path3 exists trying to unmount:\n";
-    qx /umount $path3/;
-  }
-  else {
-    print "Path does not exist, please run again script\n";
-    exit 1;
+    if ($i > 2) {
+      print "something went wrong creating the path: $p\n;";
+      exit 1;
+    }
+    else {
+      $i = $i + 1;
+      print "Path $p does not exists, we try to create it: ";
+      system ("mkdir -p $p");
+      check_path($p);
+    }
   }
 }
-
-sub trim { return $_[0] =~ s/^\s+|\s+$//rg; }
+print "Mounting Digi Storage Account to $path\n";
+system ("mount.davfs $digidav $path");
+print "Displaying mount if it worked\n";
+system ("mount | grep $path");
